@@ -79,22 +79,3 @@
   (is (= (read-literate-string "(foo)") "(foo)"))
   (is (= (read-literate-string ";>(+ 2 3)") "5"))
   (is (= (read-literate-string ";foo") nil)))
-
-
-
-;; Example macro code -- delete once done
-;; (defmacro dbg [code]
-;;   `(do (print "Executing " '~code)
-;;        ~code))
-
-;; (macroexpand '(dbg (* 3 2)))
-;; (dbg (* 3 2))
-
-;; (defn forloop-fn-6 [i end & code]
-;;   `(let [finish# ~end]
-;;      (loop [~i 0]
-;;        (when (< ~i finish#)
-;;          ~@code
-;;          (recur (inc ~i))))))
-
-;; (eval (forloop-fn-6 'i 10 '(print i) '(print (* i i))))
