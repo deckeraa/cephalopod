@@ -47,18 +47,18 @@
 (eval (macroexpand '(defpost {:title "bar"} asdf qwer))
       )
 (defpost {:title "bar"} asdf qwer)
-
+(exec-literate-prog (slurp "./resources/public/foo.clj"))
 ;; literate
 ;; Takes a literal Clojure program as one big string and
 ;; executes the lines marked for execution by starting with ;>
 ;;
-(defn literate [prog]
+(defn exec-literate-prog [prog]
   (let [lines (clojure.string/split-lines prog)]
     (clojure.string/join "\n" (remove nil? (map read-literate-string lines)))))
 
-(deftest test-literate
-  (is (= (literate "foo\n;>(+ 4 3)\nbar") "foo\n7\nbar"))
-  (is (= (literate "foo\n;>(+ 4 3)\n;(+ 4 5)\n;another comment\nbar") "foo\n7\nbar")))
+(deftest test-exec-literate-prog
+  (is (= (exec-literate-prog "foo\n;>(+ 4 3)\nbar") "foo\n7\nbar"))
+  (is (= (exec-literate-prog "foo\n;>(+ 4 3)\n;(+ 4 5)\n;another comment\nbar") "foo\n7\nbar")))
 
 ;; read-literate-string
 ;; Takes a string a reads it.
@@ -74,8 +74,20 @@
       nil
       string)))
 
+(defn read-literate-string [string]
+  (cond
+   (< (count string) 1) nil ;empty string
+   (< (count string) 2) (if (= (subs string 0 1) ";") nil string)
+   (= (subs string 0 2) ";>") (pr-str (eval (read-string (subs string 2))))
+   :else (if (= (subs string 0 1) ";") nil string)
+   ))
+
 (deftest test-read-literate-string
   (is (= (read-literate-string "foo") "foo"))
   (is (= (read-literate-string "(foo)") "(foo)"))
   (is (= (read-literate-string ";>(+ 2 3)") "5"))
-  (is (= (read-literate-string ";foo") nil)))
+  (is (= (read-literate-string ";foo") nil))
+  (is (= (read-literate-string ";") nil))
+  (is (= (read-literate-string "a") "a"))
+  (is (= (read-literate-string ";a") nil))
+  (is (= (read-literate-string "") nil)))
