@@ -1,5 +1,6 @@
 (ns cephalopod.handler
-  (:use [compojure.core])
+  (:use [compojure.core]
+        [clojure.test :as test])
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
             [hiccup.core :as html]
@@ -45,38 +46,55 @@
 (eval (read-string (slurp "./resources/public/foo.clj")))
 (eval (macroexpand '(defpost {:title "bar"} asdf qwer))
       )
-(@ ('foo))
+(defpost {:title "bar"} asdf qwer)
 
+;; literate
+;; Takes a literal Clojure program as one big string and
+;; executes the lines marked for execution by starting with ;>
+;;
 (defn literate [prog]
   (let [lines (clojure.string/split-lines prog)]
-    (clojure.string/join "\n" (map read-literate-string lines))))
+    (clojure.string/join "\n" (remove nil? (map read-literate-string lines)))))
 
-(literate "foo\n;>(+ 4 3)\nbar")
-(clojure.string/join "" '( "1" "2"))
+(deftest test-literate
+  (is (= (literate "foo\n;>(+ 4 3)\nbar") "foo\n7\nbar"))
+  (is (= (literate "foo\n;>(+ 4 3)\n;(+ 4 5)\n;another comment\nbar") "foo\n7\nbar")))
+
+;; read-literate-string
+;; Takes a string a reads it.
+;; If the string does not start with ";>"
+;; the string is returned.
+;; Otherwise the subsequent form after ";>" is
+;; read and evaluted, and the return valued is
+;; stringified and returned.
 (defn read-literate-string [string]
   (if (= (subs string 0 2) ";>")
     (pr-str (eval (read-string (subs string 2))))
-    string))
+    (if (= (subs string 0 1) ";")
+      nil
+      string)))
 
-(def string ";>(+ 2 3)")
-(read-literate-string ";>(+ 2 3)")
-(= (subs ";>(+ 2 3" 0 2) ";>")
-(list {:title "foo"})
-(str (map quote '(asdf brfk)))
-(str '(asdf brfk))
-(defpost {:title "bar"} asdf qwer)
-(defmacro dbg [code]
-  `(do (print "Executing " '~code)
-       ~code))
+(deftest test-read-literate-string
+  (is (= (read-literate-string "foo") "foo"))
+  (is (= (read-literate-string "(foo)") "(foo)"))
+  (is (= (read-literate-string ";>(+ 2 3)") "5"))
+  (is (= (read-literate-string ";foo") nil)))
 
-(macroexpand '(dbg (* 3 2)))
-(dbg (* 3 2))
 
-(defn forloop-fn-6 [i end & code]
-  `(let [finish# ~end]
-     (loop [~i 0]
-       (when (< ~i finish#)
-         ~@code
-         (recur (inc ~i))))))
 
-(eval (forloop-fn-6 'i 10 '(print i) '(print (* i i))))
+;; Example macro code -- delete once done
+;; (defmacro dbg [code]
+;;   `(do (print "Executing " '~code)
+;;        ~code))
+
+;; (macroexpand '(dbg (* 3 2)))
+;; (dbg (* 3 2))
+
+;; (defn forloop-fn-6 [i end & code]
+;;   `(let [finish# ~end]
+;;      (loop [~i 0]
+;;        (when (< ~i finish#)
+;;          ~@code
+;;          (recur (inc ~i))))))
+
+;; (eval (forloop-fn-6 'i 10 '(print i) '(print (* i i))))
