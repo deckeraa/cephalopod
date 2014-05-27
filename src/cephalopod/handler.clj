@@ -47,11 +47,11 @@
         metadata (read-string (first lines))
         post (rest lines)
         htmlified-post (clojure.string/join "<br/>\n" post)]
-    (assoc metadata :post htmlified-post)))
+    (assoc metadata :text htmlified-post)))
 
 (deftest test-read-post-from-string
   (is (= (read-post-from-string "{:title foo}\nHello World\nLine Two")
-         '{:title foo :post "Hello World<br/>\nLine Two"})))
+         '{:title foo :text "Hello World<br/>\nLine Two"})))
 
 
 
@@ -104,16 +104,40 @@
    [:meta {:charset "utf-8"}]
    [:title (:title post)]
    [:link {:rel "stylesheet" :type "text/css" :href "/styles/css/bootstrap.css"}]
+   [:link {:rel "stylesheet" :type "text/css" :href "/styles/css/blog.css"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
    [:meta {:name "generator" :content "cephalopod"}]
    ])
+
+(defn post-masthead [post]
+  [:div {:class "blog-masthead"}
+   [:div {:class "container"}
+    [:nav {:class "blog-nav"}
+     [:a {:class "blog-nav-item active" :href "#"} "Home"]
+     [:a {:class "blog-nav-item " :href "#"} "Blog"]]]])
+
+(defn post-title-area [post]
+  [:div {:class "blog-header"}
+   [:h1 {:class "blog-title"} (:title post)]
+   [:p {:class "lead blog-description"} (:lead-description post)]])
+
+(defn post-body [post]
+  [:div {:class "blog-post"}
+   [:h2 {:class "blog-post-title"} (:title post)]
+   [:p {:class "blog-post-meta"} (:date post) " by " (:author post)]
+   [:p (:text post)]])
 
 (defn htmlify-post [post-title]
   (let [post (read-post-from-string
               (slurp (str "./resources/public/" post-title)))]
     (html/html [:html {:lang "en"}
                 (post-head post)
-                (:post post)
+                [:body
+                 (post-masthead post)
+                 [:div {:class "container"}
+                  (post-title-area post)
+                  [:div {:class "row"}]
+                  (post-body post)]]
                 ])))
 
 (defroutes app-routes
