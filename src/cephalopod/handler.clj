@@ -125,20 +125,32 @@
   [:div {:class "blog-post"}
    [:h2 {:class "blog-post-title"} (:title post)]
    [:p {:class "blog-post-meta"} (:date post) " by " (:author post)]
-   [:p (:text post)]])
+   (:text post)])
+
+(defn add-newlines-to-html [html]
+  (clojure.string/replace html #"</?(html|head|body|title|link|meta|div)[^>]*>" #(str (first %1) "\n")))
+
+(deftest test-add-newlines-to-html
+  (is (= (add-newlines-to-html "<html><body><p>Foo</p></body></html>") "<html>\n<body>\n<p>Foo</p></body>\n</html>\n")))
 
 (defn htmlify-post [post-title]
   (let [post (read-post-from-string
               (slurp (str "./resources/public/" post-title)))]
-    (html/html [:html {:lang "en"}
-                (post-head post)
-                [:body
-                 (post-masthead post)
-                 [:div {:class "container"}
-                  (post-title-area post)
-                  [:div {:class "row"}]
-                  (post-body post)]]
-                ])))
+    (add-newlines-to-html
+     (html/html [:html {:lang "en"}
+                 (post-head post)
+                 [:body
+                  (post-masthead post)
+                  [:div {:class "container"}
+                   (post-title-area post)
+                   [:div {:class "row"}]
+                   (post-body post)]]
+                 ]))))
+
+;; These are for playing around with Clojure regular expressions
+;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"</?(html|head)>" #(str (first %1) "\n"))
+;; (re-seq #"</?(html|head)>" "<html><htmll><head>Foo</head><p>Bar</p></html>")
+;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"<(/?)html>" #(str %1 "\n"))
 
 (defroutes app-routes
   ;; (GET "/" [] (html/html [:html
