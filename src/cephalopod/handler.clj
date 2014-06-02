@@ -151,12 +151,36 @@
 ;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"</?(html|head)>" #(str (first %1) "\n"))
 ;; (re-seq #"</?(html|head)>" "<html><htmll><head>Foo</head><p>Bar</p></html>")
 ;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"<(/?)html>" #(str %1 "\n"))
+(re-seq #"<\s+clj\s+src=\"([^\"])\"/>" "<html><clj src=\"(+ 3 2)\"/></html>")
+;(re-seq #"<\s*clj\s*src=\"\(([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
+(re-seq #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
+(clojure.string/replace "<html><clj src=\"(+ 3 2)\"/></html>" #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" #(pr-str (load-string (second %1))))
+
+(defn clj-tags-namespace-testing-function []
+  "clj-tags-namespace-testing-function was evaluated successfully")
+
+(load-string "(cephalopod.handler/clj-tags-namespace-testing-function)")
+;; (read-string (slurp "./resources/public/bar.clj"))
+;; eval-clj-tags
+;; Runs through a String of html and replaces all <clj src="(some_expression)"/>
+;; tags with the evaluated expression for that tag.
+(defn eval-clj-tags [html]
+  (clojure.string/replace
+   html
+   #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>"
+   #(pr-str (load-string (second %1)))))
+
+
+(deftest test-eval-clj-tags
+  (is (= (eval-clj-tags "<html><clj src=\"(+ 3 2)\"/></html>") "<html>5</html>"))
+  (is (= (eval-clj-tags "<head>asdf< clj     src=\"(pr-str (+ 3 2))\"    /  >") "<head>asdf\"5\""))
+  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7")))
 
 (defroutes app-routes
   ;; (GET "/" [] (html/html [:html
   ;;                         [:h1 "Hello World"]
   ;;                         [:p "This is a test paragraph"]]))
-  (GET "/ioctopus/:foo" [foo] (htmlify-post foo))
+  (GET "/ioctopus/:foo" [foo] (eval-clj-tags (slurp "./resources/public/templates/blog.html")))
 ;  (route/files "/" {:root "resources"})
   (route/files "/styles/" {:root "resources/public/styles/"})
   (route/not-found "Not Found"))
