@@ -155,6 +155,7 @@
 ;(re-seq #"<\s*clj\s*src=\"\(([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
 (re-seq #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
 (clojure.string/replace "<html><clj src=\"(+ 3 2)\"/></html>" #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" #(pr-str (load-string (second %1))))
+;(load-string (second (first(re-seq #"<\s*clj\s*src=\"(.*)\"\s*/\s*>" "<clj src=\"(slurp \"../foo.clj\")\"/>"))))
 
 (defn clj-tags-namespace-testing-function []
   "clj-tags-namespace-testing-function was evaluated successfully")
@@ -167,15 +168,17 @@
 (defn eval-clj-tags [html]
   (clojure.string/replace
    html
-   #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>"
+   #"<\s*clj\s*src=\"(.*)\"\s*/\s*>"
+;   #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>"
    #(pr-str (load-string (second %1)))))
-
 
 (deftest test-eval-clj-tags
   (is (= (eval-clj-tags "<html><clj src=\"(+ 3 2)\"/></html>") "<html>5</html>"))
   (is (= (eval-clj-tags "<head>asdf< clj     src=\"(pr-str (+ 3 2))\"    /  >") "<head>asdf\"5\""))
-  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7")))
+  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7"))
+  (is (= (eval-clj-tags "<clj src=\"(load-string \"(+ 3 2)\")\"/>") "5")))
 
+(load-string "(+ 3 2)")
 (defroutes app-routes
   ;; (GET "/" [] (html/html [:html
   ;;                         [:h1 "Hello World"]
