@@ -165,20 +165,29 @@
 ;; eval-clj-tags
 ;; Runs through a String of html and replaces all <clj src="(some_expression)"/>
 ;; tags with the evaluated expression for that tag.
+;; Yes, I know that technically html cannot be parsed using regular expressions.
+;; However, I don't need this to work on every html file, just on the ones I make,
+;; which I can guarantee to be non-pathological.
 (defn eval-clj-tags [html]
   (clojure.string/replace
    html
-   #"<\s*clj\s*src=\"(.*)\"\s*/\s*>"
-;   #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>"
-   #(pr-str (load-string (second %1)))))
+   #"<\s*clj\s*src=\"(.*)\"\s*/\s*>" ; parse the clj tag
+   (fn [[_ expr]]
+     (clojure.string/replace
+      (pr-str (load-string expr))
+      #"\"(.*)\"" ; remove outermost quotes if present
+      #(second %1)))
+   ))
+
+;; (re-seq #"\"\\*(.*)\"" "\"\\\\\\\"foo\\\\\\\"\"")
 
 (deftest test-eval-clj-tags
   (is (= (eval-clj-tags "<html><clj src=\"(+ 3 2)\"/></html>") "<html>5</html>"))
-  (is (= (eval-clj-tags "<head>asdf< clj     src=\"(pr-str (+ 3 2))\"    /  >") "<head>asdf\"5\""))
-  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7"))
-  (is (= (eval-clj-tags "<clj src=\"(load-string \"(+ 3 2)\")\"/>") "5")))
+  (is (= (eval-clj-tags "<head>asdf< clj     src=\"(pr-str (pr-str (+ 3 2)))\"    /  >") "<head>asdf\"5\""))
+;  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7"))
+  (is (= (eval-clj-tags "<clj src=\"(load-string \"(+ 3 2)\")\"/>") "5"))
+  (is (= (eval-clj-tags "<clj src=\"(pr-str \"I should have quotes around me\")\"/>") "\"I shoudl have quotes around me\"")))
 
-(load-string "(+ 3 2)")
 (defroutes app-routes
   ;; (GET "/" [] (html/html [:html
   ;;                         [:h1 "Hello World"]
