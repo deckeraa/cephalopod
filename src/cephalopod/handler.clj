@@ -147,20 +147,8 @@
                    (post-body post)]]
                  ]))))
 
-;; These are for playing around with Clojure regular expressions
-;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"</?(html|head)>" #(str (first %1) "\n"))
-;; (re-seq #"</?(html|head)>" "<html><htmll><head>Foo</head><p>Bar</p></html>")
-;; (clojure.string/replace "<html><head>Foo</head><p>Bar</p></html>" #"<(/?)html>" #(str %1 "\n"))
-(re-seq #"<\s+clj\s+src=\"([^\"])\"/>" "<html><clj src=\"(+ 3 2)\"/></html>")
-;(re-seq #"<\s*clj\s*src=\"\(([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
-(re-seq #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" "<html><clj src=\"(+ 3 2)\"/></html>")
-(clojure.string/replace "<html><clj src=\"(+ 3 2)\"/></html>" #"<\s*clj\s*src=\"([^\"]*)\"\s*/\s*>" #(pr-str (load-string (second %1))))
-;(load-string (second (first(re-seq #"<\s*clj\s*src=\"(.*)\"\s*/\s*>" "<clj src=\"(slurp \"../foo.clj\")\"/>"))))
-
 (defn clj-tags-namespace-testing-function []
   "clj-tags-namespace-testing-function was evaluated successfully")
-
-;; (load-string "(cephalopod.handler/clj-tags-namespace-testing-function)")
 
 (def ^:dynamic pagemap (transient {}))
 ;; (read-string (slurp "./resources/public/bar.clj"))
@@ -181,23 +169,6 @@
         #"\"(.*)\"" ; remove outermost quotes if present
         #(second %1)))
      )))
-
-;; (def ^:dynamic b (transient {}))
-;; (binding [b (transient {})]
-;;   (do
-;;     (load-string "(assoc! b :foo 1)")
-;;     (pr-str (persistent! b))
-;;     (load-string "(assoc! b :bar 2)")
-;;     ))
-
-;; (let [a 1]
-;;   (load-string "(+ 3 a)"))
-
-
-
-
-
-;; (re-seq #"\"\\*(.*)\"" "\"\\\\\\\"foo\\\\\\\"\"")
 
 (deftest test-eval-clj-tags
   (is (= (eval-clj-tags "<html><clj src=\"(+ 3 2)\"/></html>") "<html>5</html>"))
