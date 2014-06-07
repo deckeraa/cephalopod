@@ -160,7 +160,9 @@
 (defn clj-tags-namespace-testing-function []
   "clj-tags-namespace-testing-function was evaluated successfully")
 
-(load-string "(cephalopod.handler/clj-tags-namespace-testing-function)")
+;; (load-string "(cephalopod.handler/clj-tags-namespace-testing-function)")
+
+(def ^:dynamic pagemap (transient {}))
 ;; (read-string (slurp "./resources/public/bar.clj"))
 ;; eval-clj-tags
 ;; Runs through a String of html and replaces all <clj src="(some_expression)"/>
@@ -169,15 +171,31 @@
 ;; However, I don't need this to work on every html file, just on the ones I make,
 ;; which I can guarantee to be non-pathological.
 (defn eval-clj-tags [html]
-  (clojure.string/replace
-   html
-   #"<\s*clj\s*src=\"(.*)\"\s*/\s*>" ; parse the clj tag
-   (fn [[_ expr]]
-     (clojure.string/replace
-      (pr-str (load-string expr))
-      #"\"(.*)\"" ; remove outermost quotes if present
-      #(second %1)))
-   ))
+  (binding [pagemap (transient {})]
+    (clojure.string/replace
+     html
+     #"<\s*clj\s*src=\"(.*)\"\s*/\s*>" ; parse the clj tag
+     (fn [[_ expr]]
+       (clojure.string/replace
+        (pr-str (load-string expr))
+        #"\"(.*)\"" ; remove outermost quotes if present
+        #(second %1)))
+     )))
+
+;; (def ^:dynamic b (transient {}))
+;; (binding [b (transient {})]
+;;   (do
+;;     (load-string "(assoc! b :foo 1)")
+;;     (pr-str (persistent! b))
+;;     (load-string "(assoc! b :bar 2)")
+;;     ))
+
+;; (let [a 1]
+;;   (load-string "(+ 3 a)"))
+
+
+
+
 
 ;; (re-seq #"\"\\*(.*)\"" "\"\\\\\\\"foo\\\\\\\"\"")
 

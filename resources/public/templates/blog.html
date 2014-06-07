@@ -33,6 +33,8 @@
           <div class="blog-post">
             <h2 class="blog-post-title">Post title goes here</h2>
             <p class="blog-post-meta">Date by <a href="#">Author</a></p>
+            <clj src="(assoc! cephalopod.handler/pagemap :foo 1)" />
+            <clj src="(pr-str (:foo cephalopod.handler/pagemap))" /></br>
             <clj src="(cephalopod.handler/clj-tags-namespace-testing-function)"/> </br>
             <clj src="(pr-str "I should have quotes around me")"/>
             <!clj src="(slurp "../foo.clj")"/>
