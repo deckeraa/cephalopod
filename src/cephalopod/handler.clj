@@ -4,7 +4,8 @@
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
             [hiccup.core :as html]
-            [me.raynes.conch :as conch]))
+            [me.raynes.conch :as conch]
+            [clojure.java.io :as io]))
 
 
 
@@ -150,7 +151,8 @@
 (defn clj-tags-namespace-testing-function []
   "clj-tags-namespace-testing-function was evaluated successfully")
 
-(def ^:dynamic pagemap (transient {}))
+(def ^:dynamic pagemap   (transient {}))
+(def ^:dynamic pagemodel {})
 ;; (read-string (slurp "./resources/public/bar.clj"))
 ;; eval-clj-tags
 ;; Runs through a String of html and replaces all <clj src="(some_expression)"/>
@@ -176,13 +178,28 @@
 ;  (is (= (eval-clj-tags "<clj src=\"(foo)\"/>") "7"))
   (is (= (eval-clj-tags "<clj src=\"(load-string \"(+ 3 2)\")\"/>") "5"))
 ;  (is (= (eval-clj-tags "<clj src=\"(pr-str \"I should have quotes around me\")\"/>") "\"I shoudl have quotes around me\""))
-  )
+)
+
+;; Returns a list of strings of the file contents of all files in the
+;; directory that have filenames that match the regex.
+(defn slurp-directory-files-matching [dir regex]
+  (if (nil? (re-matches #".*/" dir)) ; directory needs to have / at end
+    (slurp-directory-files-matching (str dir "/") regex)
+    (let [matched-names (filter #(not (nil? (re-matches regex %1)))
+                                (seq (.list (io/file dir))))
+          matched-names-full (map #(str dir %1) matched-names)]
+      (map slurp matched-names-full)
+      )))
+
+;(slurp-directory-files-matching "./resources/public/posts" #"(.*).post")
 
 (defroutes app-routes
   ;; (GET "/" [] (html/html [:html
   ;;                         [:h1 "Hello World"]
   ;;                         [:p "This is a test paragraph"]]))
   (GET "/ioctopus/:foo" [foo] (eval-clj-tags (slurp "./resources/public/templates/blog.html")))
+  (GET "/ioctopus" []
+       (binding [pagemodel {:foo 1}] (eval-clj-tags (slurp "./resources/public/templates/blog.html"))))
 ;  (route/files "/" {:root "resources"})
   (route/files "/styles/" {:root "resources/public/styles/"})
   (route/not-found "Not Found"))
